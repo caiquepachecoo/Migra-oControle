@@ -211,6 +211,8 @@ function formatarData(d){
     return `${p[2]}/${p[1]}`;
 }
 
+/* ===== PRODUTOS ===== */
+
 function abrirProdutos(i){
     clienteAtual = i;
     document.getElementById("main").classList.add("hidden");
@@ -225,13 +227,19 @@ function voltar(){
 }
 
 function addProduto(){
-    if(!nomeProduto.value || !idProduto.value) return;
+    if(!nomeProduto.value || !idProduto.value){
+        alert("Preencha nome e ID");
+        return;
+    }
+
+    if(!dados[clienteAtual].produtosLista){
+        dados[clienteAtual].produtosLista = [];
+    }
 
     dados[clienteAtual].produtosLista.push({
         nome: nomeProduto.value,
         id: idProduto.value,
-        criado:false,
-        rodando:false
+        status: ""
     });
 
     nomeProduto.value="";
@@ -241,15 +249,18 @@ function addProduto(){
     renderProdutos();
 }
 
-function toggleProduto(i,campo){
-    let p=dados[clienteAtual].produtosLista[i];
-    p[campo]=!p[campo];
+function atualizarStatus(i){
+    let valor = document.getElementById("statusProd"+i).value;
+    dados[clienteAtual].produtosLista[i].status = valor;
     salvar();
-    renderProdutos();
 }
 
 function renderProdutos(){
     listaProdutos.innerHTML="";
+
+    if(!dados[clienteAtual].produtosLista){
+        dados[clienteAtual].produtosLista = [];
+    }
 
     dados[clienteAtual].produtosLista.forEach((p,i)=>{
         listaProdutos.innerHTML += `
@@ -257,17 +268,18 @@ function renderProdutos(){
             <b>${p.nome}</b><br>
             ID: ${p.id}<br>
 
-            <button onclick="toggleProduto(${i},'criado')">
-                ${p.criado ? "✅ Criado" : "Criado"}
-            </button>
-
-            <button onclick="toggleProduto(${i},'rodando')">
-                ${p.rodando ? "🚀 Rodando" : "Rodando"}
-            </button>
+            <input 
+                id="statusProd${i}" 
+                placeholder="Status (Crawler, Pronto...)" 
+                value="${p.status || ""}"
+                oninput="atualizarStatus(${i})"
+            >
         </div>
         `;
     });
 }
+
+/* ===== RENDER PRINCIPAL ===== */
 
 function render(){
     afazer.innerHTML="";
@@ -290,7 +302,7 @@ function render(){
         <div class="card ${item.status=="antigo"?"compacto":""}">
             <b>${item.cliente}</b><br>
             ${item.id}<br>
-            <a href="${item.linkSF}" target="_blank" class="link">Abrir link</a>
+            <a href="${item.linkSF}" target="_blank" class="link">Abrir Link</a>
             ${infoExtra}
 
             <div>
