@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Controle de Migração</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial;
+    background: #0d0d0f;
+    color: #e4e4e7;
+}
+
+.header {
+    background: #111;
+    padding: 18px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    border-bottom: 1px solid #222;
+}
+
+.container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: auto;
+}
+
+input {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 6px;
+    border: 1px solid #2a2a2e;
+    background: #111;
+    color: #fff;
+}
+
+input:focus {
+    outline: none;
+    border-color: #ff6b00;
+}
+
+button {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 12px;
+    background: transparent;
+    color: #ccc;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #1f1f22;
+    color: white;
+}
+
+button.primary {
+    background: #ff6b00;
+    color: white;
+}
+
+button.primary:hover {
+    opacity: 0.85;
+}
+
+.grid {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.coluna {
+    flex: 1;
+    background: #111;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #222;
+}
+
+.coluna h3 {
+    font-size: 14px;
+    color: #888;
+    font-weight: 500;
+}
+
+.card {
+    background: #151517;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    cursor: grab;
+    border: 1px solid #222;
+    transition: 0.2s;
+}
+
+.card:hover {
+    border-color: #333;
+}
+
+.card b {
+    font-size: 14px;
+}
+
+.card small {
+    color: #777;
+}
+
+.actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.dashboard {
+    display: flex;
+    gap: 10px;
+}
+
+.box {
+    flex: 1;
+    background: #111;
+    padding: 12px;
+    text-align: center;
+    border-radius: 8px;
+    border: 1px solid #222;
+    font-size: 13px;
+}
+
+textarea {
+    width: 100%;
+    margin-top: 8px;
+    border-radius: 6px;
+    padding: 8px;
+    background: #111;
+    border: 1px solid #2a2a2e;
+    color: white;
+}
+
+a {
+    color: #ff6b00;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">Controle de Migração</div>
+
+<div class="container">
+
+<div class="dashboard">
+    <div class="box">Total<br><b id="total">0</b></div>
+    <div class="box">A Fazer<br><b id="afazerCount">0</b></div>
+    <div class="box">Andamento<br><b id="andamentoCount">0</b></div>
+    <div class="box">Finalizado<br><b id="finalizadoCount">0</b></div>
+</div>
+
+<br>
+
+<input id="id" placeholder="ID">
+<input id="cliente" placeholder="Cliente">
+<input id="onboarder" placeholder="@Nome ou telefone">
+<input id="linkSF" placeholder="Link da Task no SF">
+
+<button class="primary" onclick="add()">Adicionar</button>
+<button onclick="limparTudo()">Limpar</button>
+
+<br><br>
+
+<input id="busca" placeholder="Buscar..." oninput="render()">
+
+<div class="grid">
+    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'afazer')">
+        <h3>A fazer</h3>
+        <div id="afazer"></div>
+    </div>
+
+    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'andamento')">
+        <h3>Em andamento</h3>
+        <div id="andamento"></div>
+    </div>
+
+    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'finalizado')">
+        <h3>Finalizado</h3>
+        <div id="finalizado"></div>
+    </div>
+</div>
+
+</div>
+
+<script>
+let dados = JSON.parse(localStorage.getItem("migracoes")) || [];
+let draggedIndex = null;
+
+function salvar(){
+    localStorage.setItem("migracoes", JSON.stringify(dados));
+}
+
+function add(){
+    if(!id.value || !cliente.value || !onboarder.value || !linkSF.value){
+        alert("Preencha tudo");
+        return;
+    }
+
+    dados.push({
+        id: id.value,
+        cliente: cliente.value,
+        onboarder: onboarder.value,
+        linkSF: linkSF.value,
+        status: "afazer",
+        mensagem:"",
+        mensagemEditada:"",
+        minimizado:false
+    });
+
+    salvar();
+    id.value="";
+    cliente.value="";
+    onboarder.value="";
+    linkSF.value="";
+    render();
+}
+
+function moverParaAndamento(i){
+    dados[i].status = "andamento";
+    salvar();
+    render();
+}
+
+function finalizar(i){
+    let item = dados[i];
+    item.status="finalizado";
+
+    item.mensagem =
+`🚨 [Waiting for Conference:
+Onboarder: ${item.onboarder}
+Descrição: Migração finalizada! Aguardando Conferência.
+Link da task no SF: ${item.linkSF}`;
+
+    item.mensagemEditada = item.mensagem;
+
+    salvar();
+    render();
+}
+
+function deletar(i){
+    if(confirm("Excluir esse card?")){
+        dados.splice(i,1);
+        salvar();
+        render();
+    }
+}
+
+function limparTudo(){
+    if(confirm("Apagar tudo?")){
+        dados=[];
+        salvar();
+        render();
+    }
+}
+
+function toggleMinimizar(i){
+    dados[i].minimizado = !dados[i].minimizado;
+    salvar();
+    render();
+}
+
+function atualizarMensagem(i){
+    dados[i].mensagemEditada = document.getElementById("msgEdit"+i).value;
+    salvar();
+}
+
+function copiarTexto(texto){
+    navigator.clipboard.writeText(texto);
+    alert("Copiado!");
+}
+
+function enviarWhats(msg, onboarder){
+    let numero = onboarder.replace(/\D/g,"");
+    let url = numero.length > 8 
+        ? `https://wa.me/55${numero}?text=${encodeURIComponent(msg)}`
+        : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+    window.open(url, "_blank");
+}
+
+function drag(event,i){ draggedIndex = i; }
+function allowDrop(e){ e.preventDefault(); }
+
+function drop(e,status){
+    e.preventDefault();
+    if(draggedIndex !== null){
+        dados[draggedIndex].status = status;
+        salvar();
+        render();
+    }
+}
+
+function atualizarDashboard(){
+    total.innerText = dados.length;
+    afazerCount.innerText = dados.filter(d=>d.status=="afazer").length;
+    andamentoCount.innerText = dados.filter(d=>d.status=="andamento").length;
+    finalizadoCount.innerText = dados.filter(d=>d.status=="finalizado").length;
+}
+
+function render(){
+    afazer.innerHTML="";
+    andamento.innerHTML="";
+    finalizado.innerHTML="";
+
+    let buscaVal = busca.value.toLowerCase();
+
+    dados.forEach((item,i)=>{
+
+        if(item.id.toLowerCase().includes(buscaVal) || item.cliente.toLowerCase().includes(buscaVal)){
+
+            let card = `
+            <div class="card ${item.status}" draggable="true" ondragstart="drag(event, ${i})">
+
+                <b>${item.cliente}</b><br>
+                <small>ID: ${item.id}</small>
+
+                ${item.minimizado ? `
+                    <div class="actions">
+                        <button onclick="toggleMinimizar(${i})">Expandir</button>
+                        <button onclick="deletar(${i})">Excluir</button>
+                    </div>
+                ` : `
+                    <br><small>${item.onboarder}</small><br>
+                    <a href="${item.linkSF}" target="_blank">Abrir task</a>
+
+                    <div class="actions">
+                        ${item.status=="afazer" ? `<button onclick="moverParaAndamento(${i})">Iniciar</button>`:""}
+                        ${item.status!="finalizado" ? `<button onclick="finalizar(${i})">Finalizar</button>`:""}
+                        <button onclick="toggleMinimizar(${i})">Minimizar</button>
+                        <button onclick="deletar(${i})">Excluir</button>
+                    </div>
+
+                    ${item.status=="finalizado" ? `
+                    <textarea id="msgEdit${i}" oninput="atualizarMensagem(${i})">${item.mensagemEditada}</textarea>
+
+                    <div class="actions">
+                        <button onclick="enviarWhats(document.getElementById('msgEdit${i}').value, '${item.onboarder}')">Whats</button>
+                        <button onclick="copiarTexto(document.getElementById('msgEdit${i}').value)">Copiar</button>
+                    </div>
+                    `:""}
+                `}
+            </div>
+            `;
+
+            document.getElementById(item.status).innerHTML += card;
+        }
+    });
+
+    atualizarDashboard();
+}
+
+render();
+</script>
+
+</body>
+</html>
