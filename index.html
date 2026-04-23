@@ -67,6 +67,7 @@ button.primary {
     padding: 8px;
     border-radius: 8px;
     border: 1px solid #222;
+    min-height: 300px;
 }
 
 .card {
@@ -75,11 +76,7 @@ button.primary {
     border-radius: 6px;
     margin-top: 5px;
     border: 1px solid #222;
-}
-
-.compacto {
-    font-size: 10px;
-    opacity: 0.7;
+    cursor: grab;
 }
 
 .group {
@@ -102,9 +99,7 @@ a.link {
     text-decoration: none;
 }
 
-.hidden {
-    display: none;
-}
+.hidden { display: none; }
 </style>
 </head>
 
@@ -112,7 +107,7 @@ a.link {
 
 <div class="header">Controle de Migração</div>
 
-<!-- TELA PRINCIPAL -->
+<!-- MAIN -->
 <div class="container" id="main">
 
 <input id="id" placeholder="ID">
@@ -126,15 +121,26 @@ a.link {
 <button class="primary" onclick="add()">Adicionar</button>
 
 <div class="grid">
-    <div class="coluna"><h3>A fazer</h3><div id="afazer"></div></div>
-    <div class="coluna"><h3>Andamento</h3><div id="andamento"></div></div>
-    <div class="coluna"><h3>Finalizado</h3><div id="finalizado"></div></div>
-    <div class="coluna"><h3>Antigos</h3><div id="antigo"></div></div>
+    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'afazer')">
+        <h3>A fazer</h3><div id="afazer"></div>
+    </div>
+
+    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'andamento')">
+        <h3>Andamento</h3><div id="andamento"></div>
+    </div>
+
+    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'finalizado')">
+        <h3>Finalizado</h3><div id="finalizado"></div>
+    </div>
+
+    <div class="coluna">
+        <h3>Antigos</h3><div id="antigo"></div>
+    </div>
 </div>
 
 </div>
 
-<!-- TELA PRODUTOS -->
+<!-- PRODUTOS -->
 <div class="container hidden" id="produtosPage">
 
 <button onclick="voltar()">← Voltar</button>
@@ -153,6 +159,9 @@ a.link {
 let dados = JSON.parse(localStorage.getItem("migracoes")) || [];
 let estadoUI = JSON.parse(localStorage.getItem("uiState")) || {};
 let clienteAtual = null;
+let draggedIndex = null;
+
+/* ===== BASICO ===== */
 
 function salvar(){ localStorage.setItem("migracoes", JSON.stringify(dados)); }
 function salvarUI(){ localStorage.setItem("uiState", JSON.stringify(estadoUI)); }
@@ -184,57 +193,51 @@ function add(){
     render();
 }
 
-function mover(i,status){
-    dados[i].status = status;
-    salvar();
-    render();
+/* ===== DRAG ===== */
+
+function drag(event,i){
+    draggedIndex = i;
 }
 
-function arquivar(i){
-    let data = new Date();
-    dados[i].status = "antigo";
-    dados[i].data = data.toLocaleDateString("pt-BR");
-    dados[i].mes = data.toLocaleString("pt-BR",{month:'long',year:'numeric'});
-    salvar();
-    render();
+function allowDrop(e){
+    e.preventDefault();
 }
 
-function toggle(key){
-    estadoUI[key]=!estadoUI[key];
-    salvarUI();
-    render();
-}
+function drop(e,status){
+    e.preventDefault();
 
-function formatarData(d){
-    if(!d) return "";
-    let p=d.split("-");
-    return `${p[2]}/${p[1]}`;
+    if(draggedIndex !== null){
+        let item = dados[draggedIndex];
+        item.status = status;
+
+        if(status === "finalizado"){
+            item.mensagem = `🚨 Migração finalizada
+Onboarder: ${item.onboarder}
+Link: ${item.linkSF}`;
+        }
+
+        salvar();
+        render();
+    }
 }
 
 /* ===== PRODUTOS ===== */
 
 function abrirProdutos(i){
     clienteAtual = i;
-    document.getElementById("main").classList.add("hidden");
-    document.getElementById("produtosPage").classList.remove("hidden");
+    main.classList.add("hidden");
+    produtosPage.classList.remove("hidden");
     tituloProdutos.innerText = dados[i].cliente;
     renderProdutos();
 }
 
 function voltar(){
-    document.getElementById("main").classList.remove("hidden");
-    document.getElementById("produtosPage").classList.add("hidden");
+    main.classList.remove("hidden");
+    produtosPage.classList.add("hidden");
 }
 
 function addProduto(){
-    if(!nomeProduto.value || !idProduto.value){
-        alert("Preencha nome e ID");
-        return;
-    }
-
-    if(!dados[clienteAtual].produtosLista){
-        dados[clienteAtual].produtosLista = [];
-    }
+    if(!nomeProduto.value || !idProduto.value) return;
 
     dados[clienteAtual].produtosLista.push({
         nome: nomeProduto.value,
@@ -250,17 +253,13 @@ function addProduto(){
 }
 
 function atualizarStatus(i){
-    let valor = document.getElementById("statusProd"+i).value;
-    dados[clienteAtual].produtosLista[i].status = valor;
+    dados[clienteAtual].produtosLista[i].status =
+        document.getElementById("statusProd"+i).value;
     salvar();
 }
 
 function renderProdutos(){
     listaProdutos.innerHTML="";
-
-    if(!dados[clienteAtual].produtosLista){
-        dados[clienteAtual].produtosLista = [];
-    }
 
     dados[clienteAtual].produtosLista.forEach((p,i)=>{
         listaProdutos.innerHTML += `
@@ -270,8 +269,8 @@ function renderProdutos(){
 
             <input 
                 id="statusProd${i}" 
-                placeholder="Status (Crawler, Pronto...)" 
-                value="${p.status || ""}"
+                value="${p.status || ""}" 
+                placeholder="Crawler / Pronto..."
                 oninput="atualizarStatus(${i})"
             >
         </div>
@@ -279,7 +278,13 @@ function renderProdutos(){
     });
 }
 
-/* ===== RENDER PRINCIPAL ===== */
+/* ===== RENDER ===== */
+
+function formatarData(d){
+    if(!d) return "";
+    let p=d.split("-");
+    return `${p[2]}/${p[1]}`;
+}
 
 function render(){
     afazer.innerHTML="";
@@ -291,7 +296,7 @@ function render(){
 
     dados.forEach((item,i)=>{
 
-        let infoExtra = `
+        let info = `
         <div class="small">
             ${item.entrada ? `E: ${formatarData(item.entrada)}`:""}
             ${item.entrega ? ` | S: ${formatarData(item.entrega)}`:""}
@@ -299,22 +304,19 @@ function render(){
         </div>`;
 
         let card = `
-        <div class="card ${item.status=="antigo"?"compacto":""}">
+        <div class="card" draggable="true" ondragstart="drag(event, ${i})">
             <b>${item.cliente}</b><br>
             ${item.id}<br>
             <a href="${item.linkSF}" target="_blank" class="link">Abrir Link</a>
-            ${infoExtra}
+            ${info}
 
             <div>
                 <button onclick="abrirProdutos(${i})">Produtos</button>
-                ${item.status=="afazer"?`<button onclick="mover(${i},'andamento')">Iniciar</button>`:""}
-                ${item.status!="finalizado"?`<button onclick="mover(${i},'finalizado')">Finalizar</button>`:""}
-                ${item.status=="finalizado"?`<button onclick="arquivar(${i})">Arquivar</button>`:""}
             </div>
         </div>
         `;
 
-        if(item.status=="antigo"){
+        if(item.status==="antigo"){
             if(!grupos[item.mes]) grupos[item.mes]={};
             if(!grupos[item.mes][item.data]) grupos[item.mes][item.data]=[];
             grupos[item.mes][item.data].push(card);
@@ -324,22 +326,10 @@ function render(){
     });
 
     for(let mes in grupos){
-        let mKey="mes_"+mes;
-        let fechadoMes=estadoUI[mKey];
-
-        antigo.innerHTML += `<div class="group" onclick="toggle('${mKey}')">${fechadoMes?'▶':'▼'} ${mes}</div>`;
-
-        if(!fechadoMes){
-            for(let data in grupos[mes]){
-                let dKey=mKey+"_"+data;
-                let fechadoData=estadoUI[dKey];
-
-                antigo.innerHTML += `<div class="subgroup" onclick="toggle('${dKey}')">${fechadoData?'▶':'▼'} ${data}</div>`;
-
-                if(!fechadoData){
-                    grupos[mes][data].forEach(c=>antigo.innerHTML+=c);
-                }
-            }
+        antigo.innerHTML += `<div class="group">${mes}</div>`;
+        for(let data in grupos[mes]){
+            antigo.innerHTML += `<div class="subgroup">${data}</div>`;
+            grupos[mes][data].forEach(c=>antigo.innerHTML+=c);
         }
     }
 }
