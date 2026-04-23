@@ -26,7 +26,7 @@ body {
     margin: auto;
 }
 
-input {
+input, textarea {
     padding: 6px;
     margin: 3px;
     border-radius: 5px;
@@ -34,11 +34,7 @@ input {
     background: #111;
     color: #fff;
     font-size: 11px;
-}
-
-.small {
-    font-size: 10px;
-    color: #777;
+    width: 100%;
 }
 
 button {
@@ -79,18 +75,21 @@ button.primary {
     cursor: grab;
 }
 
+.small {
+    font-size: 10px;
+    color: #777;
+}
+
 .group {
     margin-top: 10px;
     font-size: 11px;
     color: #888;
-    cursor: pointer;
 }
 
 .subgroup {
     margin-left: 10px;
     font-size: 11px;
     color: #aaa;
-    cursor: pointer;
 }
 
 a.link {
@@ -99,7 +98,7 @@ a.link {
     text-decoration: none;
 }
 
-.hidden { display: none; }
+.hidden { display:none; }
 </style>
 </head>
 
@@ -157,18 +156,20 @@ a.link {
 
 <script>
 let dados = JSON.parse(localStorage.getItem("migracoes")) || [];
-let estadoUI = JSON.parse(localStorage.getItem("uiState")) || {};
 let clienteAtual = null;
 let draggedIndex = null;
 
-/* ===== BASICO ===== */
+/* ===== BASE ===== */
 
-function salvar(){ localStorage.setItem("migracoes", JSON.stringify(dados)); }
-function salvarUI(){ localStorage.setItem("uiState", JSON.stringify(estadoUI)); }
+function salvar(){
+    localStorage.setItem("migracoes", JSON.stringify(dados));
+}
+
+/* ===== ADD ===== */
 
 function add(){
     if(!id.value || !cliente.value || !onboarder.value || !linkSF.value){
-        alert("Preencha o básico");
+        alert("Preencha tudo");
         return;
     }
 
@@ -211,14 +212,36 @@ function drop(e,status){
         item.status = status;
 
         if(status === "finalizado"){
-            item.mensagem = `🚨 Migração finalizada
+            item.mensagem =
+`🚨 [Waiting for Conference: ${item.cliente} | ID ${item.id}
 Onboarder: ${item.onboarder}
-Link: ${item.linkSF}`;
+Descrição: Migração finalizada! Aguardando Conferência.
+Link da task no SF: ${item.linkSF}`;
+
+            item.mensagemEditada = item.mensagem;
         }
 
         salvar();
         render();
     }
+}
+
+/* ===== WHATS ===== */
+
+function enviarWhats(msg, onboarder){
+    let numero = onboarder.replace(/\D/g,"");
+
+    let url = numero.length > 8
+        ? `https://wa.me/55${numero}?text=${encodeURIComponent(msg)}`
+        : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+    window.open(url, "_blank");
+}
+
+function atualizarMensagem(i){
+    dados[i].mensagemEditada =
+        document.getElementById("msgEdit"+i).value;
+    salvar();
 }
 
 /* ===== PRODUTOS ===== */
@@ -313,6 +336,18 @@ function render(){
             <div>
                 <button onclick="abrirProdutos(${i})">Produtos</button>
             </div>
+
+            ${item.status=="finalizado" ? `
+            <textarea id="msgEdit${i}" oninput="atualizarMensagem(${i})">${item.mensagemEditada}</textarea>
+
+            <button onclick="enviarWhats(document.getElementById('msgEdit${i}').value, '${item.onboarder}')">
+                📲 Whats
+            </button>
+
+            <button onclick="navigator.clipboard.writeText(document.getElementById('msgEdit${i}').value)">
+                📋 Copiar
+            </button>
+            `:""}
         </div>
         `;
 
