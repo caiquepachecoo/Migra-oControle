@@ -5,98 +5,104 @@
 <title>Controle de Migração</title>
 
 <style>
+:root {
+    --bg: #0d0d0f;
+    --card: #151517;
+    --box: #111;
+    --text: #ffffff;
+    --sub: #888;
+    --border: #222;
+    --accent: #ff6b00;
+}
+
+.light {
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --box: #ffffff;
+    --text: #111;
+    --sub: #666;
+    --border: #ddd;
+}
+
 body {
     margin: 0;
     font-family: 'Segoe UI';
-    background: #0d0d0f;
-    color: #e4e4e7;
+    background: var(--bg);
+    color: var(--text);
     font-size: 13px;
 }
 
 .header {
-    background: #111;
-    padding: 14px;
-    text-align: center;
-    border-bottom: 1px solid #222;
+    background: var(--box);
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
 }
 
-.container {
-    padding: 15px;
-    max-width: 1500px;
-    margin: auto;
-}
+.container { padding: 15px; max-width: 1500px; margin:auto; }
 
 input, textarea {
-    padding: 6px;
-    margin: 3px;
-    border-radius: 5px;
-    border: 1px solid #2a2a2e;
-    background: #111;
-    color: #fff;
-    font-size: 11px;
     width: 100%;
+    margin: 3px;
+    padding: 6px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--box);
+    color: var(--text);
+    font-size: 11px;
 }
 
 button {
-    padding: 4px 6px;
     font-size: 10px;
+    padding: 4px 6px;
     border-radius: 5px;
+    background: transparent;
+    color: var(--sub);
     border: none;
     cursor: pointer;
-    background: transparent;
-    color: #aaa;
 }
 
 button.primary {
-    background: #ff6b00;
+    background: var(--accent);
     color: white;
 }
 
-.grid {
-    display: flex;
-    gap: 8px;
-}
+.grid { display:flex; gap:8px; }
 
 .coluna {
-    flex: 1;
-    background: #111;
-    padding: 8px;
-    border-radius: 8px;
-    border: 1px solid #222;
-    min-height: 300px;
+    flex:1;
+    background: var(--box);
+    padding:8px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    min-height:300px;
 }
 
 .card {
-    background: #151517;
-    padding: 6px;
-    border-radius: 6px;
-    margin-top: 5px;
-    border: 1px solid #222;
-    cursor: grab;
+    background: var(--card);
+    padding:6px;
+    border-radius:6px;
+    margin-top:5px;
+    border:1px solid var(--border);
+    cursor:grab;
 }
 
-.small {
-    font-size: 10px;
-    color: #777;
+.small { font-size:10px; color:var(--sub); }
+
+.group { margin-top:10px; color:var(--sub); }
+.subgroup { margin-left:10px; color:var(--sub); }
+
+a { color:var(--accent); font-size:10px; }
+
+.prodBox {
+    margin-top:6px;
+    padding:5px;
+    border:1px solid var(--border);
+    border-radius:5px;
 }
 
-.group {
-    margin-top: 10px;
-    font-size: 11px;
-    color: #888;
-}
-
-.subgroup {
-    margin-left: 10px;
-    font-size: 11px;
-    color: #aaa;
-}
-
-a.link {
-    color: #ff6b00;
-    font-size: 10px;
-    text-decoration: none;
-}
+.criado { background:#0f1f0f; }
 
 .hidden { display:none; }
 </style>
@@ -104,211 +110,143 @@ a.link {
 
 <body>
 
-<div class="header">Controle de Migração</div>
+<div class="header">
+    <b>Controle de Migração</b>
+    <button onclick="toggleTheme()">🌙/☀️</button>
+</div>
 
-<!-- MAIN -->
-<div class="container" id="main">
+<div class="container">
 
 <input id="id" placeholder="ID">
 <input id="cliente" placeholder="Cliente">
-<input id="onboarder" placeholder="@nome ou @telefone">
+<input id="onboarder" placeholder="@nome ou telefone">
 <input id="linkSF" placeholder="Link SF">
-<input id="entrada" type="date">
-<input id="entrega" type="date">
-<input id="produtos" placeholder="Qtd produtos">
 
 <button class="primary" onclick="add()">Adicionar</button>
 
 <div class="grid">
-    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'afazer')">
-        <h3>A fazer</h3><div id="afazer"></div>
-    </div>
 
-    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'andamento')">
-        <h3>Andamento</h3><div id="andamento"></div>
-    </div>
+<div class="coluna" ondrop="drop(event,'afazer')" ondragover="allowDrop(event)">
+<h3>A fazer</h3><div id="afazer"></div></div>
 
-    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'finalizado')">
-        <h3>Finalizado</h3><div id="finalizado"></div>
-    </div>
+<div class="coluna" ondrop="drop(event,'andamento')" ondragover="allowDrop(event)">
+<h3>Andamento</h3><div id="andamento"></div></div>
 
-    <div class="coluna">
-        <h3>Antigos</h3><div id="antigo"></div>
-    </div>
-</div>
+<div class="coluna" ondrop="drop(event,'finalizado')" ondragover="allowDrop(event)">
+<h3>Finalizado</h3><div id="finalizado"></div></div>
+
+<div class="coluna" ondrop="drop(event,'antigo')" ondragover="allowDrop(event)">
+<h3>Antigos</h3><div id="antigo"></div></div>
 
 </div>
-
-<!-- PRODUTOS -->
-<div class="container hidden" id="produtosPage">
-
-<button onclick="voltar()">← Voltar</button>
-<h3 id="tituloProdutos"></h3>
-
-<input id="nomeProduto" placeholder="Nome produto">
-<input id="idProduto" placeholder="ID produto">
-
-<button onclick="addProduto()">Adicionar</button>
-
-<div id="listaProdutos"></div>
-
 </div>
 
 <script>
 let dados = JSON.parse(localStorage.getItem("migracoes")) || [];
-let clienteAtual = null;
 let draggedIndex = null;
 
-/* ===== BASE ===== */
+function salvar(){ localStorage.setItem("migracoes", JSON.stringify(dados)); }
 
-function salvar(){
-    localStorage.setItem("migracoes", JSON.stringify(dados));
+/* ===== THEME ===== */
+function toggleTheme(){
+    document.body.classList.toggle("light");
 }
 
 /* ===== ADD ===== */
-
 function add(){
     if(!id.value || !cliente.value || !onboarder.value || !linkSF.value){
-        alert("Preencha tudo");
-        return;
-    }
-
-    if(!onboarder.value.startsWith("@")){
-        alert("Onboarder precisa começar com @");
-        return;
+        alert("Preencha tudo"); return;
     }
 
     dados.push({
-        id: id.value,
-        cliente: cliente.value,
-        onboarder: onboarder.value,
-        linkSF: linkSF.value,
-        entrada: entrada.value,
-        entrega: entrega.value,
-        produtosQtd: produtos.value,
-        produtosLista: [],
-        status: "afazer"
+        id:id.value,
+        cliente:cliente.value,
+        onboarder:onboarder.value,
+        linkSF:linkSF.value,
+        status:"afazer",
+        produtosLista:[],
+        produtosAberto:false
     });
 
-    salvar();
-    render();
+    salvar(); render();
 }
 
-/* ===== DRAG ===== */
-
-function drag(event,i){
-    draggedIndex = i;
-}
-
-function allowDrop(e){
-    e.preventDefault();
-}
-
-function drop(e,status){
-    e.preventDefault();
-
-    if(draggedIndex !== null){
-        let item = dados[draggedIndex];
-        item.status = status;
-
-        if(status === "finalizado"){
-            item.mensagem =
-`🚨 [Waiting for Conference: ${item.cliente} | ID ${item.id}
-Onboarder: ${item.onboarder}
-Descrição: Migração finalizada! Aguardando Conferência.
-Link da task no SF: ${item.linkSF}`;
-
-            item.mensagemEditada = item.mensagem;
-        }
-
+/* ===== DELETE CARD (NOVO) ===== */
+function deletarCard(i){
+    if(confirm("Excluir esse cliente?")){
+        dados.splice(i,1);
         salvar();
         render();
     }
 }
 
-/* ===== WHATS ===== */
+/* ===== DRAG ===== */
+function drag(e,i){ draggedIndex=i; }
+function allowDrop(e){ e.preventDefault(); }
 
-function enviarWhats(msg, onboarder){
-    let numero = onboarder.replace(/\D/g,"");
+function drop(e,status){
+    e.preventDefault();
 
-    let url = numero.length > 8
-        ? `https://wa.me/55${numero}?text=${encodeURIComponent(msg)}`
-        : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    let item = dados[draggedIndex];
+    item.status = status;
 
-    window.open(url, "_blank");
+    if(status==="finalizado"){
+        item.mensagem =
+`🚨 [Waiting for Conference: ${item.cliente} | ID ${item.id}
+Onboarder: ${item.onboarder}
+Descrição: Migração finalizada! Aguardando Conferência.
+Link da task no SF: ${item.linkSF}`;
+
+        item.mensagemEditada = item.mensagem;
+    }
+
+    if(status==="antigo"){
+        let d = new Date();
+        item.data = d.toLocaleDateString("pt-BR");
+        item.mes = d.toLocaleString("pt-BR",{month:'long',year:'numeric'});
+    }
+
+    salvar(); render();
 }
 
-function atualizarMensagem(i){
-    dados[i].mensagemEditada =
-        document.getElementById("msgEdit"+i).value;
-    salvar();
+/* ===== WHATS ===== */
+function enviarWhats(msg,onb){
+    let num = onb.replace(/\D/g,"");
+    let url = num.length>8
+        ? `https://wa.me/55${num}?text=${encodeURIComponent(msg)}`
+        : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url,"_blank");
 }
 
 /* ===== PRODUTOS ===== */
-
-function abrirProdutos(i){
-    clienteAtual = i;
-    main.classList.add("hidden");
-    produtosPage.classList.remove("hidden");
-    tituloProdutos.innerText = dados[i].cliente;
-    renderProdutos();
+function toggleProdutos(i){
+    dados[i].produtosAberto=!dados[i].produtosAberto;
+    salvar(); render();
 }
 
-function voltar(){
-    main.classList.remove("hidden");
-    produtosPage.classList.add("hidden");
+function addProduto(i){
+    let nome=prompt("Nome produto");
+    let id=prompt("ID produto");
+    if(!nome||!id)return;
+
+    dados[i].produtosLista.push({nome,id,status:""});
+    salvar(); render();
 }
 
-function addProduto(){
-    if(!nomeProduto.value || !idProduto.value) return;
-
-    dados[clienteAtual].produtosLista.push({
-        nome: nomeProduto.value,
-        id: idProduto.value,
-        status: ""
-    });
-
-    nomeProduto.value="";
-    idProduto.value="";
-
-    salvar();
-    renderProdutos();
-}
-
-function atualizarStatus(i){
-    dados[clienteAtual].produtosLista[i].status =
-        document.getElementById("statusProd"+i).value;
+function atualizarStatusProduto(i,p){
+    dados[i].produtosLista[p].status =
+        document.getElementById(`prod_${i}_${p}`).value;
     salvar();
 }
 
-function renderProdutos(){
-    listaProdutos.innerHTML="";
-
-    dados[clienteAtual].produtosLista.forEach((p,i)=>{
-        listaProdutos.innerHTML += `
-        <div class="card">
-            <b>${p.nome}</b><br>
-            ID: ${p.id}<br>
-
-            <input 
-                id="statusProd${i}" 
-                value="${p.status || ""}" 
-                placeholder="Crawler / Pronto..."
-                oninput="atualizarStatus(${i})"
-            >
-        </div>
-        `;
-    });
+function deletarProduto(i,p){
+    if(confirm("Excluir produto?")){
+        dados[i].produtosLista.splice(p,1);
+        salvar(); render();
+    }
 }
 
 /* ===== RENDER ===== */
-
-function formatarData(d){
-    if(!d) return "";
-    let p=d.split("-");
-    return `${p[2]}/${p[1]}`;
-}
-
 function render(){
     afazer.innerHTML="";
     andamento.innerHTML="";
@@ -319,35 +257,47 @@ function render(){
 
     dados.forEach((item,i)=>{
 
-        let info = `
-        <div class="small">
-            ${item.entrada ? `E: ${formatarData(item.entrada)}`:""}
-            ${item.entrega ? ` | S: ${formatarData(item.entrega)}`:""}
-            ${item.produtosQtd ? ` | ${item.produtosQtd}p`:""}
-        </div>`;
-
-        let card = `
-        <div class="card" draggable="true" ondragstart="drag(event, ${i})">
+        let card=`
+        <div class="card" draggable="true" ondragstart="drag(event,${i})">
             <b>${item.cliente}</b><br>
             ${item.id}<br>
-            <a href="${item.linkSF}" target="_blank" class="link">Abrir Link</a>
-            ${info}
+            <a href="${item.linkSF}" target="_blank">Abrir Link</a>
 
             <div>
-                <button onclick="abrirProdutos(${i})">Produtos</button>
+                <button onclick="toggleProdutos(${i})">Produtos</button>
+                <button onclick="deletarCard(${i})">❌</button>
             </div>
 
-            ${item.status=="finalizado" ? `
-            <textarea id="msgEdit${i}" oninput="atualizarMensagem(${i})">${item.mensagemEditada}</textarea>
-
-            <button onclick="enviarWhats(document.getElementById('msgEdit${i}').value, '${item.onboarder}')">
-                📲 Whats
-            </button>
-
-            <button onclick="navigator.clipboard.writeText(document.getElementById('msgEdit${i}').value)">
-                📋 Copiar
-            </button>
+            ${item.status=="finalizado"?`
+            <textarea id="msg${i}">${item.mensagemEditada}</textarea>
+            <button onclick="enviarWhats(document.getElementById('msg${i}').value,'${item.onboarder}')">Whats</button>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('msg${i}').value)">Copiar</button>
             `:""}
+
+            ${item.produtosAberto?`
+            <div>
+                <button onclick="addProduto(${i})">+ Produto</button>
+
+                ${item.produtosLista.map((p,pi)=>{
+                    let criado = p.status.toLowerCase().includes("pronto");
+
+                    return `
+                    <div class="prodBox ${criado?'criado':''}">
+                        <b>${p.nome}</b> (${p.id})
+                        ${criado?'<span> ✔</span>':''}
+
+                        <input id="prod_${i}_${pi}"
+                        value="${p.status}"
+                        oninput="atualizarStatusProduto(${i},${pi})">
+
+                        <button onclick="deletarProduto(${i},${pi})">❌</button>
+                    </div>
+                    `;
+                }).join("")}
+
+            </div>
+            `:""}
+
         </div>
         `;
 
@@ -356,14 +306,14 @@ function render(){
             if(!grupos[item.mes][item.data]) grupos[item.mes][item.data]=[];
             grupos[item.mes][item.data].push(card);
         } else {
-            document.getElementById(item.status).innerHTML += card;
+            document.getElementById(item.status).innerHTML+=card;
         }
     });
 
     for(let mes in grupos){
-        antigo.innerHTML += `<div class="group">${mes}</div>`;
+        antigo.innerHTML+=`<div class="group">📁 ${mes}</div>`;
         for(let data in grupos[mes]){
-            antigo.innerHTML += `<div class="subgroup">${data}</div>`;
+            antigo.innerHTML+=`<div class="subgroup">📂 ${data}</div>`;
             grupos[mes][data].forEach(c=>antigo.innerHTML+=c);
         }
     }
