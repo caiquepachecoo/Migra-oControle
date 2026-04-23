@@ -7,7 +7,7 @@
 <style>
 body {
     margin: 0;
-    font-family: 'Segoe UI', Arial;
+    font-family: 'Segoe UI';
     background: #0d0d0f;
     color: #e4e4e7;
     font-size: 13px;
@@ -17,7 +17,6 @@ body {
     background: #111;
     padding: 14px;
     text-align: center;
-    font-size: 16px;
     border-bottom: 1px solid #222;
 }
 
@@ -28,28 +27,28 @@ body {
 }
 
 input {
-    padding: 7px;
+    padding: 6px;
     margin: 3px;
     border-radius: 5px;
     border: 1px solid #2a2a2e;
     background: #111;
     color: #fff;
-    font-size: 12px;
+    font-size: 11px;
+}
+
+.small {
+    font-size: 10px;
+    color: #777;
 }
 
 button {
-    padding: 4px 7px;
+    padding: 4px 6px;
     font-size: 10px;
     border-radius: 5px;
     border: none;
     cursor: pointer;
     background: transparent;
     color: #aaa;
-}
-
-button:hover {
-    background: #1f1f22;
-    color: white;
 }
 
 button.primary {
@@ -60,7 +59,6 @@ button.primary {
 .grid {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
 }
 
 .coluna {
@@ -69,60 +67,43 @@ button.primary {
     padding: 8px;
     border-radius: 8px;
     border: 1px solid #222;
-    min-height: 350px;
-}
-
-.coluna h3 {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 5px;
 }
 
 .card {
     background: #151517;
-    padding: 8px;
+    padding: 6px;
     border-radius: 6px;
-    margin-top: 6px;
+    margin-top: 5px;
     border: 1px solid #222;
-    cursor: grab;
 }
 
-.card.compacto {
-    padding: 4px;
+.compacto {
     font-size: 10px;
-    opacity: 0.65;
+    opacity: 0.7;
 }
 
-.card b {
-    font-size: 12px;
-}
-
-.card small {
-    font-size: 10px;
-    color: #777;
-}
-
-.actions {
-    display: flex;
-    gap: 4px;
-    margin-top: 4px;
-    flex-wrap: wrap;
-}
-
-textarea {
-    width: 100%;
-    margin-top: 4px;
-    border-radius: 5px;
-    padding: 5px;
+.group {
+    margin-top: 10px;
     font-size: 11px;
-    background: #111;
-    border: 1px solid #2a2a2e;
-    color: white;
+    color: #888;
+    cursor: pointer;
 }
 
-a {
+.subgroup {
+    margin-left: 10px;
+    font-size: 11px;
+    color: #aaa;
+    cursor: pointer;
+}
+
+a.link {
     color: #ff6b00;
     font-size: 10px;
+    text-decoration: none;
+}
+
+.hidden {
+    display: none;
 }
 </style>
 </head>
@@ -131,49 +112,59 @@ a {
 
 <div class="header">Controle de Migração</div>
 
-<div class="container">
+<!-- TELA PRINCIPAL -->
+<div class="container" id="main">
 
 <input id="id" placeholder="ID">
 <input id="cliente" placeholder="Cliente">
-<input id="onboarder" placeholder="@Nome ou telefone">
-<input id="linkSF" placeholder="Link da Task no SF">
+<input id="onboarder" placeholder="@nome ou @telefone">
+<input id="linkSF" placeholder="Link SF">
+<input id="entrada" type="date">
+<input id="entrega" type="date">
+<input id="produtos" placeholder="Qtd produtos">
 
 <button class="primary" onclick="add()">Adicionar</button>
-<button onclick="limparTudo()">Limpar</button>
-
-<input id="busca" placeholder="Buscar..." oninput="render()">
 
 <div class="grid">
-    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'afazer')">
-        <h3>A fazer</h3><div id="afazer"></div>
-    </div>
-
-    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'andamento')">
-        <h3>Andamento</h3><div id="andamento"></div>
-    </div>
-
-    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'finalizado')">
-        <h3>Finalizado</h3><div id="finalizado"></div>
-    </div>
-
-    <div class="coluna" ondragover="allowDrop(event)" ondrop="drop(event,'antigo')">
-        <h3>Antigos</h3><div id="antigo"></div>
-    </div>
+    <div class="coluna"><h3>A fazer</h3><div id="afazer"></div></div>
+    <div class="coluna"><h3>Andamento</h3><div id="andamento"></div></div>
+    <div class="coluna"><h3>Finalizado</h3><div id="finalizado"></div></div>
+    <div class="coluna"><h3>Antigos</h3><div id="antigo"></div></div>
 </div>
+
+</div>
+
+<!-- TELA PRODUTOS -->
+<div class="container hidden" id="produtosPage">
+
+<button onclick="voltar()">← Voltar</button>
+<h3 id="tituloProdutos"></h3>
+
+<input id="nomeProduto" placeholder="Nome produto">
+<input id="idProduto" placeholder="ID produto">
+
+<button onclick="addProduto()">Adicionar</button>
+
+<div id="listaProdutos"></div>
 
 </div>
 
 <script>
 let dados = JSON.parse(localStorage.getItem("migracoes")) || [];
-let draggedIndex = null;
+let estadoUI = JSON.parse(localStorage.getItem("uiState")) || {};
+let clienteAtual = null;
 
-function salvar(){
-    localStorage.setItem("migracoes", JSON.stringify(dados));
-}
+function salvar(){ localStorage.setItem("migracoes", JSON.stringify(dados)); }
+function salvarUI(){ localStorage.setItem("uiState", JSON.stringify(estadoUI)); }
 
 function add(){
     if(!id.value || !cliente.value || !onboarder.value || !linkSF.value){
-        alert("Preencha tudo");
+        alert("Preencha o básico");
+        return;
+    }
+
+    if(!onboarder.value.startsWith("@")){
+        alert("Onboarder precisa começar com @");
         return;
     }
 
@@ -182,102 +173,100 @@ function add(){
         cliente: cliente.value,
         onboarder: onboarder.value,
         linkSF: linkSF.value,
-        status: "afazer",
-        mensagem:"",
-        mensagemEditada:""
+        entrada: entrada.value,
+        entrega: entrega.value,
+        produtosQtd: produtos.value,
+        produtosLista: [],
+        status: "afazer"
     });
 
     salvar();
-    id.value="";
-    cliente.value="";
-    onboarder.value="";
-    linkSF.value="";
     render();
 }
 
-function gerarMensagem(item){
-    if(!item.mensagem){
-        item.mensagem =
-`🚨 [Waiting for Conference:
-Onboarder: ${item.onboarder}
-Descrição: Migração finalizada! Aguardando Conferência.
-Link da task no SF: ${item.linkSF}`;
-
-        item.mensagemEditada = item.mensagem;
-    }
-}
-
 function mover(i,status){
-    let item = dados[i];
-    item.status = status;
-
-    if(status === "finalizado"){
-        gerarMensagem(item);
-    }
-
+    dados[i].status = status;
     salvar();
     render();
 }
 
 function arquivar(i){
+    let data = new Date();
     dados[i].status = "antigo";
+    dados[i].data = data.toLocaleDateString("pt-BR");
+    dados[i].mes = data.toLocaleString("pt-BR",{month:'long',year:'numeric'});
     salvar();
     render();
 }
 
-function deletar(i){
-    if(confirm("Excluir?")){
-        dados.splice(i,1);
-        salvar();
-        render();
-    }
+function toggle(key){
+    estadoUI[key]=!estadoUI[key];
+    salvarUI();
+    render();
 }
 
-function limparTudo(){
-    if(confirm("Apagar tudo?")){
-        dados=[];
-        salvar();
-        render();
-    }
+function formatarData(d){
+    if(!d) return "";
+    let p=d.split("-");
+    return `${p[2]}/${p[1]}`;
 }
 
-function atualizarMensagem(i){
-    dados[i].mensagemEditada = document.getElementById("msgEdit"+i).value;
+function abrirProdutos(i){
+    clienteAtual = i;
+    document.getElementById("main").classList.add("hidden");
+    document.getElementById("produtosPage").classList.remove("hidden");
+    tituloProdutos.innerText = dados[i].cliente;
+    renderProdutos();
+}
+
+function voltar(){
+    document.getElementById("main").classList.remove("hidden");
+    document.getElementById("produtosPage").classList.add("hidden");
+}
+
+function addProduto(){
+    if(!nomeProduto.value || !idProduto.value) return;
+
+    dados[clienteAtual].produtosLista.push({
+        nome: nomeProduto.value,
+        id: idProduto.value,
+        criado:false,
+        rodando:false
+    });
+
+    nomeProduto.value="";
+    idProduto.value="";
+
     salvar();
+    renderProdutos();
 }
 
-function copiarTexto(texto){
-    navigator.clipboard.writeText(texto);
-    alert("Copiado!");
+function toggleProduto(i,campo){
+    let p=dados[clienteAtual].produtosLista[i];
+    p[campo]=!p[campo];
+    salvar();
+    renderProdutos();
 }
 
-function enviarWhats(msg, onboarder){
-    let numero = onboarder.replace(/\D/g,"");
-    let url = numero.length > 8 
-        ? `https://wa.me/55${numero}?text=${encodeURIComponent(msg)}`
-        : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+function renderProdutos(){
+    listaProdutos.innerHTML="";
 
-    window.open(url, "_blank");
-}
+    dados[clienteAtual].produtosLista.forEach((p,i)=>{
+        listaProdutos.innerHTML += `
+        <div class="card">
+            <b>${p.nome}</b><br>
+            ID: ${p.id}<br>
 
-function drag(event,i){ draggedIndex = i; }
-function allowDrop(e){ e.preventDefault(); }
+            <button onclick="toggleProduto(${i},'criado')">
+                ${p.criado ? "✅ Criado" : "Criado"}
+            </button>
 
-function drop(e,status){
-    e.preventDefault();
-
-    if(draggedIndex !== null){
-        let item = dados[draggedIndex];
-
-        item.status = status;
-
-        if(status === "finalizado"){
-            gerarMensagem(item);
-        }
-
-        salvar();
-        render();
-    }
+            <button onclick="toggleProduto(${i},'rodando')">
+                ${p.rodando ? "🚀 Rodando" : "Rodando"}
+            </button>
+        </div>
+        `;
+    });
 }
 
 function render(){
@@ -286,43 +275,61 @@ function render(){
     finalizado.innerHTML="";
     antigo.innerHTML="";
 
-    let buscaVal = busca.value.toLowerCase();
+    let grupos={};
 
     dados.forEach((item,i)=>{
 
-        if(item.id.toLowerCase().includes(buscaVal) || item.cliente.toLowerCase().includes(buscaVal)){
+        let infoExtra = `
+        <div class="small">
+            ${item.entrada ? `E: ${formatarData(item.entrada)}`:""}
+            ${item.entrega ? ` | S: ${formatarData(item.entrega)}`:""}
+            ${item.produtosQtd ? ` | ${item.produtosQtd}p`:""}
+        </div>`;
 
-            let compacto = item.status=="antigo" ? "compacto" : "";
+        let card = `
+        <div class="card ${item.status=="antigo"?"compacto":""}">
+            <b>${item.cliente}</b><br>
+            ${item.id}<br>
+            <a href="${item.linkSF}" target="_blank" class="link">Abrir link</a>
+            ${infoExtra}
 
-            let card = `
-            <div class="card ${compacto}" draggable="true" ondragstart="drag(event, ${i})">
-
-                <b>${item.cliente}</b><br>
-                <small>${item.id}</small>
-
-                ${item.status!="antigo" ? `
-                <div class="actions">
-                    ${item.status=="afazer" ? `<button onclick="mover(${i},'andamento')">Iniciar</button>`:""}
-                    ${item.status!="finalizado" ? `<button onclick="mover(${i},'finalizado')">Finalizar</button>`:""}
-                    ${item.status=="finalizado" ? `<button onclick="arquivar(${i})">Arquivar</button>`:""}
-                    <button onclick="deletar(${i})">Excluir</button>
-                </div>
-
-                ${item.status=="finalizado" ? `
-                <textarea id="msgEdit${i}" oninput="atualizarMensagem(${i})">${item.mensagemEditada}</textarea>
-
-                <div class="actions">
-                    <button onclick="enviarWhats(document.getElementById('msgEdit${i}').value, '${item.onboarder}')">Whats</button>
-                    <button onclick="copiarTexto(document.getElementById('msgEdit${i}').value)">Copiar</button>
-                </div>
-                `:""}
-                `:""}
+            <div>
+                <button onclick="abrirProdutos(${i})">Produtos</button>
+                ${item.status=="afazer"?`<button onclick="mover(${i},'andamento')">Iniciar</button>`:""}
+                ${item.status!="finalizado"?`<button onclick="mover(${i},'finalizado')">Finalizar</button>`:""}
+                ${item.status=="finalizado"?`<button onclick="arquivar(${i})">Arquivar</button>`:""}
             </div>
-            `;
+        </div>
+        `;
 
+        if(item.status=="antigo"){
+            if(!grupos[item.mes]) grupos[item.mes]={};
+            if(!grupos[item.mes][item.data]) grupos[item.mes][item.data]=[];
+            grupos[item.mes][item.data].push(card);
+        } else {
             document.getElementById(item.status).innerHTML += card;
         }
     });
+
+    for(let mes in grupos){
+        let mKey="mes_"+mes;
+        let fechadoMes=estadoUI[mKey];
+
+        antigo.innerHTML += `<div class="group" onclick="toggle('${mKey}')">${fechadoMes?'▶':'▼'} ${mes}</div>`;
+
+        if(!fechadoMes){
+            for(let data in grupos[mes]){
+                let dKey=mKey+"_"+data;
+                let fechadoData=estadoUI[dKey];
+
+                antigo.innerHTML += `<div class="subgroup" onclick="toggle('${dKey}')">${fechadoData?'▶':'▼'} ${data}</div>`;
+
+                if(!fechadoData){
+                    grupos[mes][data].forEach(c=>antigo.innerHTML+=c);
+                }
+            }
+        }
+    }
 }
 
 render();
